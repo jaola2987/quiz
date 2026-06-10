@@ -1,0 +1,1446 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #1a1a2e;
+        color: #eee;
+        height: 100vh;
+        overflow: hidden;
+      }
+      .slide {
+        display: none;
+        height: 100vh;
+        padding: 32px 60px 80px;
+        flex-direction: column;
+        justify-content: center;
+        overflow-y: auto;
+      }
+      .slide.active {
+        display: flex;
+      }
+      .slide-num {
+        font-size: 13px;
+        color: #888;
+        margin-bottom: 10px;
+      }
+      .category {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #7c5cbf;
+        margin-bottom: 10px;
+      }
+      .question {
+        font-size: 19px;
+        font-weight: 600;
+        line-height: 1.5;
+        margin-bottom: 20px;
+        color: #fff;
+        max-width: 900px;
+      }
+      pre.code {
+        background: #0d1117;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 14px 18px;
+        font-size: 12.5px;
+        font-family: "Courier New", monospace;
+        color: #cdd9e5;
+        margin-bottom: 18px;
+        white-space: pre-wrap;
+        line-height: 1.6;
+      }
+      .options {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: 820px;
+      }
+      .option {
+        background: #16213e;
+        border: 2px solid #2a2a4a;
+        border-radius: 10px;
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      .option:hover:not(.disabled) {
+        border-color: #7c5cbf;
+        background: #1e1e3f;
+      }
+      .option.correct {
+        border-color: #2ea84b;
+        background: #0a2a15;
+      }
+      .option.wrong {
+        border-color: #d93025;
+        background: #2a0a0a;
+      }
+      .option.disabled {
+        cursor: default;
+      }
+      .opt-letter {
+        font-weight: 700;
+        color: #7c5cbf;
+        min-width: 18px;
+        flex-shrink: 0;
+      }
+      .option.correct .opt-letter {
+        color: #2ea84b;
+      }
+      .option.wrong .opt-letter {
+        color: #d93025;
+      }
+      .explanation {
+        margin-top: 14px;
+        max-width: 820px;
+        background: #0f1e35;
+        border-left: 3px solid #7c5cbf;
+        border-radius: 0 8px 8px 0;
+        padding: 12px 16px;
+        font-size: 13.5px;
+        line-height: 1.6;
+        color: #b0c4de;
+        display: none;
+      }
+      .explanation.show {
+        display: block;
+      }
+      .explanation strong {
+        color: #9b7de0;
+      }
+      .nav {
+        position: fixed;
+        bottom: 24px;
+        right: 40px;
+        display: flex;
+        gap: 10px;
+      }
+      .nav button {
+        background: #7c5cbf;
+        border: none;
+        color: #fff;
+        padding: 9px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: background 0.2s;
+      }
+      .nav button:hover {
+        background: #9b7de0;
+      }
+      .nav button:disabled {
+        background: #333;
+        cursor: default;
+      }
+      .progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background: #7c5cbf;
+        transition: width 0.3s;
+      }
+      .counter {
+        position: fixed;
+        bottom: 30px;
+        left: 40px;
+        font-size: 13px;
+        color: #666;
+      }
+      .score {
+        position: fixed;
+        bottom: 30px;
+        left: 120px;
+        font-size: 13px;
+        color: #7c5cbf;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="progress" id="progress"></div>
+
+    <div class="slide active" data-correct="C">
+      <div class="slide-num">1 / 32</div>
+      <div class="category">HTML — Display</div>
+      <div class="question">Как будет отображаться содержимое в браузере?</div>
+      <pre class="code">
+&lt;div style="background-color: lightgray"&gt;
+  &lt;span style="background-color: red;"&gt;Текст 1&lt;/span&gt;
+  &lt;div style="background-color: green;"&gt;Текст 2&lt;/div&gt;
+  &lt;span style="background-color: yellow;"&gt;Текст 3&lt;/span&gt;
+&lt;/div&gt;</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>Все три элемента в одной
+          горизонтальной строке
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>«Текст 1» и «Текст 3» в одной строке,
+          «Текст 2» — ниже
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>Каждый элемент в отдельной строке
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>«Текст 1» первая строка, «Текст 2» и
+          «Текст 3» — вторая
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>C — верно.</strong> &lt;div&gt; — block-элемент, он разрывает
+        inline-поток до и после себя. Текст 1 (inline span) — строка 1,
+        &lt;div&gt; Текст 2 — строка 2 (block, полная ширина), Текст 3 (inline
+        span) начинает новый inline-контекст на строке 3. Все три на отдельных
+        строках.<br /><br /><strong>Как выглядит в браузере:</strong>
+        <div
+          style="
+            background-color: lightgray;
+            padding: 6px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-size: 13px;
+          "
+        >
+          <span style="background-color: red; color: #000">Текст 1</span>
+          <div style="background-color: green; color: #fff">Текст 2</div>
+          <span style="background-color: yellow; color: #000">Текст 3</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num"></div>
+      <div class="category">CSS — Inline / размеры</div>
+      <div class="question">Какой эффект дадут width и height у span?</div>
+      <pre class="code">
+&lt;span style="background: red; width: 200px"&gt;A&lt;/span&gt;
+&lt;span style="background: green; height: 200px"&gt;B&lt;/span&gt;</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>A будет шириной 200px, B — высотой
+          200px
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>Ни width, ни height не применятся —
+          span inline-элемент
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>width применится, height — нет
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>Оба применятся, так как задан
+          background
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> Inline-элементы игнорируют width и height —
+        размер определяется содержимым. Чтобы задать размеры нужно display:
+        inline-block или block.<br /><br /><strong
+          >Как выглядит в браузере:</strong
+        >
+        <div
+          style="
+            margin-top: 8px;
+            background: #0d1117;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+          "
+        >
+          <span style="background: red; color: #fff; width: 200px">A</span
+          >&nbsp;<span style="background: green; color: #fff; height: 200px"
+            >B</span
+          >
+          <div style="color: #888; font-size: 12px; margin-top: 6px">
+            ← width:200px и height:200px заданы, но оба по размеру текста —
+            игнорируются
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" data-correct="C">
+      <div class="slide-num"></div>
+      <div class="category">CSS — Margin Collapsing</div>
+      <div class="question">
+        Какой отступ появится над «Hello» внутри серого div?
+      </div>
+      <pre class="code">
+&lt;div style="background: red; margin-bottom: 40px"&gt;
+  &lt;p style="margin-top: 60px"&gt;Hello&lt;/p&gt;
+&lt;/div&gt;</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>60px — margin-top параграфа
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>100px — 40px + 60px складываются
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>0px внутри — margin-top «вытекает»
+          наружу из div
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>40px — берётся меньший из двух
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>C — верно.</strong> Если у родителя нет border-top, padding-top
+        или BFC — margin-top дочернего элемента коллапсирует с родителем. 60px
+        «вытекает» наружу и становится отступом самого div сверху. Внутри div
+        отступа над «Hello» нет.<br /><br /><strong
+          >Как выглядит в браузере:</strong
+        >
+        <div
+          style="
+            margin-top: 8px;
+            background: #0d1117;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+          "
+        >
+          <div style="background: red; margin-bottom: 40px">
+            <p style="margin-top: 60px">Hello</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num"></div>
+      <div class="category">CSS — Flexbox / margin auto</div>
+      <div class="question">Как расположатся блоки 1, 2, 3?</div>
+      <pre class="code">
+&lt;div style="display: flex; background: lightgray"&gt;
+  &lt;div style="background: red"&gt;1&lt;/div&gt;
+  &lt;div style="background: green; margin-left: auto"&gt;2&lt;/div&gt;
+  &lt;div style="background: blue"&gt;3&lt;/div&gt;
+&lt;/div&gt;</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>1 — слева, 2 — по центру, 3 — справа
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>1 — слева, 2 и 3 — прижаты к правому
+          краю
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>Все три равномерно распределены
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>1 и 2 — слева, 3 — справа
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> margin-left: auto поглощает всё свободное
+        пространство слева от элемента 2. Это прижимает 2 и 3 вместе к правому
+        краю, а 1 остаётся у левого.<br /><br /><strong
+          >Как выглядит в браузере:</strong
+        >
+        <div
+          style="
+            margin-top: 8px;
+            background: #0d1117;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+          "
+        >
+          <div style="display: flex; background: lightgray">
+            <div style="background: red">1</div>
+            <div style="background: green; margin-left: auto">2</div>
+            <div style="background: blue">3</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num"></div>
+      <div class="category">CSS — Flexbox / margin auto</div>
+      <div class="question">Где образуется пустое пространство?</div>
+      <pre class="code">
+&lt;div style="display: flex"&gt;
+  &lt;div&gt;1&lt;/div&gt;
+  &lt;div style="margin-left: auto"&gt;2&lt;/div&gt;
+  &lt;div&gt;3&lt;/div&gt;
+&lt;/div&gt;</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>Между 2 и 3
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>Между 1 и 2
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>Равномерно между всеми тремя
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>Слева от 1
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> margin-left: auto на элементе 2 поглощает
+        всё доступное свободное место слева от него. Пространство
+        концентрируется между 1 и 2, а 2 и 3 стоят вплотную у правого края.<br /><br /><strong
+          >Как выглядит в браузере:</strong
+        >
+        <div
+          style="
+            margin-top: 8px;
+            background: #0d1117;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+          "
+        >
+          <div style="display: flex">
+            <div>1</div>
+            <div style="margin-left: auto">2</div>
+            <div>3</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num"></div>
+      <div class="category">CSS — z-index / Stacking Context</div>
+      <div class="question">
+        Перекроет ли .c (z-index: 9999) элемент .a (z-index: 6)?
+      </div>
+      <pre class="code">
+.a { position: relative; z-index: 6; background: red; }
+.b { position: relative; z-index: 5; background: green; }
+.c { position: relative; z-index: 9999; background: yellow; margin-top: -10px; }
+
+&lt;div class="a"&gt;A&lt;/div&gt;
+&lt;div class="b"&gt;
+  &lt;div class="c"&gt;C&lt;/div&gt;
+&lt;/div&gt;</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>Да — z-index 9999 больше 6
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>Нет — z-index .c работает только
+          внутри stacking context .b
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>Да — position: relative всегда
+          поднимает элемент выше
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>Нет — margin-top: -10px отключает
+          z-index
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> .b создаёт stacking context (position +
+        z-index). z-index: 9999 у .c работает только внутри этого контекста. Для
+        сравнения с .a используется z-index самого .b = 5, который меньше
+        z-index .a = 6. .c окажется под .a несмотря на 9999.<br /><br /><strong
+          >Как выглядит в браузере:</strong
+        >
+        <div
+          style="
+            margin-top: 8px;
+            background: #0d1117;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+          "
+        >
+          <div style="position: relative; z-index: 6; background: red">A</div>
+          <div style="position: relative; z-index: 5; background: green">
+            <div
+              style="
+                position: relative;
+                z-index: 9999;
+                background: yellow;
+                margin-top: -10px;
+                color: #000;
+              "
+            >
+              C
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num"></div>
+      <div class="category">CSS — Grid</div>
+      <div class="question">Какова ширина третьего элемента грида?</div>
+      <pre class="code">
+.grid {
+  display: grid;
+  grid-template-columns: 100px 100px;
+}
+.item:nth-child(3) {
+  grid-column: 1 / 3;
+}
+
+&lt;div class="grid"&gt;
+  &lt;div class="item"&gt;1&lt;/div&gt;
+  &lt;div class="item"&gt;2&lt;/div&gt;
+  &lt;div class="item"&gt;3&lt;/div&gt;
+&lt;/div&gt;</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>100px — только первая колонка
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>200px — занимает колонки 1 и 2
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>300px — от линии 1 до линии 3
+          включительно
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>auto — определяется содержимым
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> grid-column: 1 / 3 означает «от линии 1 до
+        линии 3». Линии — это границы между колонками. Между линией 1 и линией 3
+        находятся две колонки по 100px = 200px итого. Цифра после / — это линия,
+        не количество.<br /><br /><strong>Как выглядит в браузере:</strong>
+        <div
+          style="
+            margin-top: 8px;
+            background: #0d1117;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+          "
+        >
+          <style>
+            .q7-grid {
+              display: grid;
+              grid-template-columns: 100px 100px;
+            }
+            .q7-item {
+              background: #4a4;
+              color: #fff;
+              padding: 4px;
+              text-align: center;
+              font-size: 12px;
+            }
+            .q7-item:nth-child(3) {
+              grid-column: 1/3;
+              background: #a44;
+            }
+          </style>
+          <div class="q7-grid">
+            <div class="q7-item">1</div>
+            <div class="q7-item">2</div>
+            <div class="q7-item">3</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num"></div>
+      <div class="category">CSS — Селекторы</div>
+      <div class="question">Какой из селекторов НЕ включает элемент #i2?</div>
+      <pre class="code">
+&lt;div class="container1"&gt;
+    &lt;div class="item active" id="i1"&gt;Item 1&lt;/div&gt;
+    &lt;div class="container2"&gt;
+        &lt;div class="wrapper"&gt;
+            &lt;div class="item" id="i2"&gt;Item 2&lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>.container1 div
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>.container2 &gt; div
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>div div div div
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>div &gt; div div div
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> .container2 &gt; div — прямой потомок.
+        Прямой потомок .container2 — это .wrapper, а не #i2. #i2 вложен глубже
+        (внутри .wrapper), поэтому &gt; div его не захватывает.<br /><br /><strong
+          >Какие элементы попадают под каждый селектор:</strong
+        >
+        <div
+          style="
+            margin-top: 8px;
+            background: #0d1117;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 12px;
+            font-family: monospace;
+            line-height: 2;
+          "
+        >
+          <span style="color: #7c5cbf">A .container1 div →</span>
+          <span
+            style="
+              background: #2ea84b;
+              color: #fff;
+              border-radius: 3px;
+              padding: 0 4px;
+            "
+            >#i1</span
+          >
+          <span
+            style="
+              background: #2ea84b;
+              color: #fff;
+              border-radius: 3px;
+              padding: 0 4px;
+            "
+            >.container2</span
+          >
+          <span
+            style="
+              background: #2ea84b;
+              color: #fff;
+              border-radius: 3px;
+              padding: 0 4px;
+            "
+            >.wrapper</span
+          >
+          <span
+            style="
+              background: #2ea84b;
+              color: #fff;
+              border-radius: 3px;
+              padding: 0 4px;
+            "
+            >#i2</span
+          ><br /><span style="color: #7c5cbf">B .container2 &gt; div →</span>
+          <span
+            style="
+              background: #2ea84b;
+              color: #fff;
+              border-radius: 3px;
+              padding: 0 4px;
+            "
+            >.wrapper</span
+          >
+          <span style="color: #d93025">#i2 ✗</span><br /><span
+            style="color: #7c5cbf"
+            >C div div div div →</span
+          >
+          <span
+            style="
+              background: #2ea84b;
+              color: #fff;
+              border-radius: 3px;
+              padding: 0 4px;
+            "
+            >#i2</span
+          ><br /><span style="color: #7c5cbf">D div &gt; div div div →</span>
+          <span
+            style="
+              background: #2ea84b;
+              color: #fff;
+              border-radius: 3px;
+              padding: 0 4px;
+            "
+            >#i2</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" data-correct="C">
+      <div class="slide-num">3 / 32</div>
+      <div class="category">CSS — Flexbox</div>
+      <div class="question">
+        flex-direction: column, три элемента. Первый прижат к верху, последний к
+        низу, равные промежутки между ними. Какое свойство применить?
+      </div>
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>justify-content: space-around
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>align-items: space-between
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>justify-content: space-between
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>align-content: space-between
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>C — верно.</strong> В flex-direction: column главная ось —
+        вертикальная. justify-content управляет именно главной осью.
+        space-between прижимает первый к началу, последний к концу, распределяя
+        промежутки равномерно между остальными.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num">4 / 32</div>
+      <div class="category">CSS — Flexbox</div>
+      <div class="question">
+        flex-direction: row, высота контейнера 300px, один элемент высотой
+        100px. Как расположить его по центру по вертикали?
+      </div>
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>justify-content: center
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>align-items: center
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>align-self: center
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>flex-align: middle
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> В flex-direction: row поперечная ось —
+        вертикальная. align-items управляет выравниванием по поперечной оси для
+        всех дочерних элементов. justify-content — горизонталь. align-self
+        применяется к самому элементу, а не контейнеру.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="C">
+      <div class="slide-num">5 / 32</div>
+      <div class="category">CSS — Flexbox</div>
+      <div class="question">
+        Где будет расположен синий блок «Где я?» внутри красного контейнера?
+      </div>
+      <pre class="code">
+&lt;div style="background:red; height:100px; display:flex;
+  flex-direction:column; justify-content:flex-start; align-items:flex-end;"&gt;
+  &lt;div style="background:blue; color:white;"&gt;Где я?&lt;/div&gt;
+&lt;/div&gt;</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>В верхнем левом углу
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>В нижнем правом углу
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>В верхнем правом углу
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>В нижнем левом углу
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>C — верно.</strong> flex-direction: column → главная ось
+        вертикальная. justify-content: flex-start → к началу (верх).
+        align-items: flex-end → к концу поперечной оси (правый край). Итог:
+        верхний правый угол.<br /><br /><strong
+          >Как выглядит в браузере:</strong
+        >
+        <div
+          style="
+            margin-top: 8px;
+            background: #0d1117;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+          "
+        >
+          <div
+            style="
+              background: red;
+              height: 100px;
+              display: flex;
+              flex-direction: column;
+              justify-content: flex-start;
+              align-items: flex-end;
+            "
+          >
+            <div style="background: blue; color: white">Где я?</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" data-correct="C">
+      <div class="slide-num">6 / 32</div>
+      <div class="category">JS — for...in / for...of</div>
+      <div class="question">Какое утверждение точно верно?</div>
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>for...in перебирает значения массива,
+          for...of — только ключи
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>for...of перебирает все перечисляемые
+          свойства, включая унаследованные
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>for...in перебирает ключи свойств,
+          for...of — значения итерируемых объектов
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>for...of работает с любыми объектами,
+          включая {a: 1, b: 2}
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>C — верно.</strong> for...in возвращает строковые ключи (включая
+        унаследованные). for...of работает только с итерируемыми (Array, String,
+        Map, Set) и возвращает значения. Обычный объект {} не итерируемый —
+        for...of бросит TypeError.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num">7 / 32</div>
+      <div class="category">JS — setTimeout / замыкание</div>
+      <div class="question">
+        Какая последовательность чисел выведется в консоль?
+      </div>
+      <pre class="code">
+let n = 0;
+while (++n &lt; 5) {
+  setTimeout(() => console.log(n), 10 + n);
+}</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>1, 2, 3, 4
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>5, 5, 5, 5
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>11, 12, 13, 14
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>2, 3, 4, 5
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> let n — одна переменная в области видимости
+        while. Все 4 колбэка замыкаются на одну и ту же переменную n. К моменту
+        срабатывания любого setTimeout цикл уже завершён: ++n достигло 5,
+        условие n &lt; 5 стало false. Все колбэки выводят 5.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num">8 / 32</div>
+      <div class="category">JS — Замыкания</div>
+      <div class="question">Что будет выведено в консоль?</div>
+      <pre class="code">
+const createCounter = (start) => {
+  let count = start;
+  return (increment) => {
+    count += increment;
+    return count;
+  };
+};
+const counter1 = createCounter(0);
+const counter2 = createCounter(2);
+console.log(counter1(counter2(2)));</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>3
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>4
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>5
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>6
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> Выполнение изнутри: counter2(2) → count у
+        counter2: 2+2=4, возвращает 4. Затем counter1(4) → count у counter1:
+        0+4=4, возвращает 4. Итог: 4.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="D">
+      <div class="slide-num">9 / 32</div>
+      <div class="category">JS — Promise .then/.catch</div>
+      <div class="question">Какое утверждение полностью верно?</div>
+      <pre class="code">
+// Фрагмент 1
+promise.then(f1).catch(f2);
+// Фрагмент 2
+promise.then(f1, f2);</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>Оба фрагмента ведут себя одинаково
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>В 1: f2 обрабатывает ошибки только из
+          promise; во 2: из promise и f1
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>В 1: f2 обрабатывает ошибки только из
+          f1; во 2: только из promise
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>В 1: f2 обрабатывает ошибки и из
+          promise, и из f1; во 2: только из promise
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>D — верно.</strong> В фрагменте 2: .then(f1, f2) — f2 —
+        rejection handler для самого promise, он не поймает ошибку внутри f1. В
+        фрагменте 1: .catch(f2) стоит после .then(f1) — поймает отклонение и от
+        promise, и от f1 (если f1 бросит ошибку).
+      </div>
+    </div>
+
+    <div class="slide" data-correct="D">
+      <div class="slide-num">10 / 32</div>
+      <div class="category">JS — Promise resolve</div>
+      <div class="question">Что будет выведено в консоль?</div>
+      <pre class="code">
+let promise = new Promise(function(resolve, reject) {
+  setTimeout(() => resolve(1), 0);
+  resolve(2);
+});
+promise.then(console.log).then(console.log);</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>1, 2
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>2, 1
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>1, undefined
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>2, undefined
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>D — верно.</strong> Promise может быть resolved только один раз.
+        resolve(2) вызван первым (синхронно) → промис resolved со значением 2.
+        Второй resolve(1) из setTimeout игнорируется. Первый .then получает 2 →
+        выводит 2. Второй .then получает undefined (console.log ничего не
+        возвращает).
+      </div>
+    </div>
+
+    <div class="slide" data-correct="C">
+      <div class="slide-num">11 / 32</div>
+      <div class="category">JS — Promise / Error в setTimeout</div>
+      <div class="question">Что произойдёт при выполнении следующего кода?</div>
+      <pre class="code">
+new Promise(function(resolve, reject) {
+  setTimeout(() => {
+    throw new Error("Whoops!");
+  }, 1000);
+}).catch(console.log);</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>Через 1 секунду промис перейдёт в
+          rejected
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>Промис сразу перейдёт в rejected
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>Через 1 секунду — необработанное
+          исключение (Uncaught Error)
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>Через 1 секунду в консоль: Error:
+          Whoops!
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>C — верно.</strong> .catch перехватывает ошибки только внутри
+        синхронного executor или явного reject(). throw внутри setTimeout
+        выполняется в другом тике event loop — Promise executor уже завершён.
+        Ошибка «вылетает» за пределы промиса как необработанное исключение.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num">12 / 32</div>
+      <div class="category">JS — Promise chain с ошибкой</div>
+      <div class="question">Что будет выведено в консоль?</div>
+      <pre class="code">
+Promise.resolve().then(() => {
+  throw new Error();
+}).then(() => {
+  console.log("A");
+}).catch(e => {
+  console.log("B");
+}).then(() => {
+  console.log("C");
+}).catch(e => {
+  console.log("D");
+});</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>A, B, C
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>B, C
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>B, D
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>Только B
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> throw → первый .then(A) пропускается →
+        .catch(B) срабатывает, выводит "B", возвращает undefined (resolved).
+        Следующий .then(C) выполняется, выводит "C". Последний .catch(D) не
+        срабатывает — нет ошибки.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num">13 / 32</div>
+      <div class="category">JS — Promise chain без ошибки</div>
+      <div class="question">Что будет выведено в консоль?</div>
+      <pre class="code">
+Promise.resolve().then(() => {
+  console.log("A");
+}).catch(e => {
+  console.log("B");
+}).then(() => {
+  console.log("C");
+}).catch(e => {
+  console.log("D");
+});</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>A, B, C, D
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>A, C
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>A, B, C
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>Только A
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> Нет ошибок → .catch(B) пропускается.
+        Выполняется .then(A) → "A". .catch(B) пропускается (нет ошибки).
+        .then(C) → "C". .catch(D) пропускается.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num">14 / 32</div>
+      <div class="category">JS — Spread объектов</div>
+      <div class="question">Какой будет результат?</div>
+      <pre class="code">
+const a = {x: 1, y: 2};
+const b = {y: 3, z: 4};
+const c = {...b, ...a};
+console.log(c.y);</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>1
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>2
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>3
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>undefined
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> При spread последний источник перезаписывает
+        предыдущий. Сначала ...b даёт y:3, затем ...a перезаписывает y:2. Итого
+        c.y = 2.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="C">
+      <div class="slide-num">15 / 32</div>
+      <div class="category">JS — Spread массивов</div>
+      <div class="question">Какой будет результат?</div>
+      <pre class="code">
+const arr1 = [1, 2, 3];
+const arr2 = [...arr1];
+arr1.push(4);
+console.log(arr1.length, arr2.length);</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>4 4
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>3 3
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>4 3
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>3 4
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>C — верно.</strong> [...arr1] создаёт shallow copy — новый
+        массив с теми же примитивными значениями. После push(4) arr1 имеет 4
+        элемента, arr2 — по-прежнему 3 (независимая копия).
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num">16 / 32</div>
+      <div class="category">JS — Деструктуризация объекта</div>
+      <div class="question">Какой будет результат?</div>
+      <pre class="code">
+const obj = {a: 0, b: 0, c: 0, d: 0};
+const {a, b = 1, c: x, d: y = 1, e: z = 1} = obj;
+console.log(a, b, x, y, z);</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>0 1 0 1 1
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>0 0 0 0 1
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>0 0 0 1 1
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>0 1 0 0 undefined
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> Дефолт применяется только если значение ===
+        undefined. b=0 → не undefined → b=0 (не 1). d=0 → y=0 (не 1). e
+        отсутствует → z=1 (дефолт). a=0, b=0, c:x → x=0, d:y=0, e:z=1. Итог: 0 0
+        0 0 1.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num">17 / 32</div>
+      <div class="category">JS — Деструктуризация массива</div>
+      <div class="question">Какой будет результат?</div>
+      <pre class="code">
+const arr = [1, 2, undefined, undefined];
+const [a = 5, , c, d = 1] = arr;
+console.log(a, c, d);</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>1 2 1
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>1 undefined 1
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>5 undefined 1
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>1 2 undefined
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> a = arr[0] = 1 (не undefined → дефолт 5 не
+        применяется). Пропуск — arr[1] игнорируется. c = arr[2] = undefined. d =
+        arr[3] = undefined → применяется дефолт 1. Итог: 1 undefined 1.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="A">
+      <div class="slide-num">18 / 32</div>
+      <div class="category">JS — Array.map</div>
+      <div class="question">Что выведет следующий код?</div>
+      <pre class="code">
+const arr = [1, 2, 3];
+const result = arr.map(x => {
+  if (x % 2 === 0) return x * 2;
+});
+console.log(result);</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>[undefined, 4, undefined]
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>[1, 4, 3]
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>[1, 2, 3]
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>[4]
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>A — верно.</strong> .map всегда возвращает массив той же длины.
+        Когда функция не возвращает явно (для нечётных), она возвращает
+        undefined. Только x=2 попадает в if → 4. Итог: [undefined, 4,
+        undefined].
+      </div>
+    </div>
+
+    <div class="slide" data-correct="D">
+      <div class="slide-num">19 / 32</div>
+      <div class="category">JS — Array.filter</div>
+      <div class="question">Что выведет следующий код?</div>
+      <pre class="code">
+const arr = [0, 1, 2, null, undefined, ''];
+const result = arr.filter(x => x);
+console.log(result);</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>[0, 1, 2, null, undefined, '']
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>[]
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>[0, null, undefined, '']
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>[1, 2]
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>D — верно.</strong> filter оставляет только truthy значения. 0,
+        null, undefined, '' — все falsy. Остаются только 1 и 2.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num">20 / 32</div>
+      <div class="category">JS — Array.reduce</div>
+      <div class="question">Что выведет следующий код?</div>
+      <pre class="code">
+const arr = [1, 2, 3];
+const result = arr.reduce((acc, val) => acc + val, '');
+console.log(result);</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>6
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>'123'
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>'6'
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>[6]
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> Начальное значение acc = '' (строка). '' + 1
+        = '1', '1' + 2 = '12', '12' + 3 = '123'. При конкатенации строки с
+        числом число приводится к строке.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="D">
+      <div class="slide-num">21 / 32</div>
+      <div class="category">JS — Array.find</div>
+      <div class="question">Что выведет следующий код?</div>
+      <pre class="code">
+const users = [
+  {id: 1, active: false},
+  {id: 2, active: true},
+  {id: 3, active: true}
+];
+const x = users.find(u => u.active);
+console.log(x);</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>[false, true, true]
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>[1, 2]
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>{id: 1, active: false}
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>{id: 2, active: true}
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>D — верно.</strong> .find возвращает первый элемент,
+        удовлетворяющий условию (не массив). Первый с active: true — объект с
+        id: 2.
+      </div>
+    </div>
+
+    <div class="slide" data-correct="B">
+      <div class="slide-num">22 / 32</div>
+      <div class="category">JS — Array.forEach</div>
+      <div class="question">Что выведет следующий код?</div>
+      <pre class="code">
+const arr = [1, 2, 3];
+const result = arr.forEach(x => x * 2);
+console.log(result);</pre
+      >
+      <div class="options">
+        <div class="option" data-opt="A">
+          <span class="opt-letter">A</span>[2, 4, 6]
+        </div>
+        <div class="option" data-opt="B">
+          <span class="opt-letter">B</span>undefined
+        </div>
+        <div class="option" data-opt="C">
+          <span class="opt-letter">C</span>[1, 2, 3]
+        </div>
+        <div class="option" data-opt="D">
+          <span class="opt-letter">D</span>6
+        </div>
+      </div>
+      <div class="explanation">
+        <strong>B — верно.</strong> .forEach всегда возвращает undefined. Он
+        предназначен для side effects, не для трансформации данных. Для создания
+        нового массива нужен .map().
+      </div>
+    </div>
+
+    <div class="counter" id="counter">1 / 32</div>
+    <div class="score" id="score"></div>
+    <div class="nav">
+      <button id="prev" disabled>← Назад</button>
+      <button id="next">Вперёд →</button>
+    </div>
+
+    <script>
+      const slides = document.querySelectorAll(".slide");
+      let cur = 0,
+        correct = 0,
+        answered = 0;
+
+      function upd() {
+        slides.forEach((s, i) => s.classList.toggle("active", i === cur));
+        document.getElementById("prev").disabled = cur === 0;
+        document.getElementById("next").disabled = cur === slides.length - 1;
+        document.getElementById("counter").textContent =
+          `${cur + 1} / ${slides.length}`;
+        document.getElementById("progress").style.width =
+          `${((cur + 1) / slides.length) * 100}%`;
+        const sn = slides[cur].querySelector(".slide-num");
+        if (sn) sn.textContent = `${cur + 1} / ${slides.length}`;
+        if (answered > 0)
+          document.getElementById("score").textContent =
+            `Правильно: ${correct}/${answered}`;
+      }
+
+      slides.forEach((slide) => {
+        const rightAnswer = slide.dataset.correct;
+        const opts = slide.querySelectorAll(".option");
+        const expl = slide.querySelector(".explanation");
+
+        opts.forEach((opt) => {
+          opt.addEventListener("click", () => {
+            if (slide.dataset.done) return;
+            slide.dataset.done = "1";
+            answered++;
+
+            const chosen = opt.dataset.opt;
+            opts.forEach((o) => {
+              o.classList.add("disabled");
+              if (o.dataset.opt === rightAnswer) o.classList.add("correct");
+            });
+            if (chosen !== rightAnswer) opt.classList.add("wrong");
+            else correct++;
+
+            if (expl) expl.classList.add("show");
+            upd();
+          });
+        });
+      });
+
+      document.getElementById("prev").onclick = () => {
+        if (cur > 0) {
+          cur--;
+          upd();
+        }
+      };
+      document.getElementById("next").onclick = () => {
+        if (cur < slides.length - 1) {
+          cur++;
+          upd();
+        }
+      };
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight") {
+          if (cur < slides.length - 1) {
+            cur++;
+            upd();
+          }
+        }
+        if (e.key === "ArrowLeft") {
+          if (cur > 0) {
+            cur--;
+            upd();
+          }
+        }
+      });
+      upd();
+    </script>
+  </body>
+</html>
